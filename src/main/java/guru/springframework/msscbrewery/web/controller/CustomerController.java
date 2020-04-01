@@ -5,6 +5,7 @@ import guru.springframework.msscbrewery.web.model.CustomerDto;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.ConstraintViolationException;
@@ -12,6 +13,7 @@ import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Created by jt on 2019-04-21.
@@ -54,16 +56,14 @@ public class CustomerController {
         customerService.deleteById(customerId);
     }
 
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<List> validationErrorHandler(ConstraintViolationException e){
-        List<String> errors = new ArrayList<>(e.getConstraintViolations().size());
-
-        e.getConstraintViolations().forEach(constraintViolation -> {
-            errors.add(constraintViolation.getPropertyPath() + " : " + constraintViolation.getMessage());
-        });
+    @ExceptionHandler()
+    public ResponseEntity<List> validationErrorHandler(MethodArgumentNotValidException e){
+        List<String> errors = e.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(x -> "Errors:key" + x.getDefaultMessage())
+                .collect(Collectors.toList());
 
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
-
-
 }
